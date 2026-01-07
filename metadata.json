@@ -1,0 +1,8 @@
+
+{
+  "name": "Lumatrix",
+  "description": "Exclusividade e inteligência na compra e venda de terrenos e imóveis de alto padrão. Avaliação via IA integrada com dados IBGE.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

@@ -28,7 +28,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   
-  // Sincronização imediata: Começamos com os Mocks para garantir que o catálogo nunca apareça vazio ou demore.
+  // Otimização: Iniciamos com MOCK_PROPERTIES para que o catálogo apareça INSTANTANEAMENTE ao abrir a aba "buy"
   const [dbProperties, setDbProperties] = useState<Property[]>(MOCK_PROPERTIES);
   const [myProperties, setMyProperties] = useState<Property[]>([]);
   
@@ -73,7 +73,6 @@ const App: React.FC = () => {
   const loadAllProperties = async () => {
     try {
       const props = await firebaseService.getProperties();
-      // Atualiza os dados apenas se o Firebase retornar algo válido, sem travar a UI
       if (props && props.length > 0) {
         setDbProperties(props);
       }
@@ -82,7 +81,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Carrega do Firebase em segundo plano após a primeira renderização
   useEffect(() => { 
     loadAllProperties(); 
   }, []);
@@ -192,11 +190,11 @@ const App: React.FC = () => {
       <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
         <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80" className="absolute inset-0 w-full h-full object-cover brightness-[0.3]" />
         <div className="relative z-10 text-center text-white px-4">
-          <h1 className="text-7xl md:text-[9rem] font-black tracking-tighter mb-8">Lumatrix<span className="text-[#c19a5b]">.</span></h1>
+          <h1 className="text-7xl md:text-[9rem] font-black tracking-tighter mb-8 text-shadow-xl">Lumatrix<span className="text-[#c19a5b]">.</span></h1>
           <p className="text-xl md:text-3xl text-slate-200 mb-16 font-light">Ativos imobiliários com inteligência analítica.</p>
           <div className="flex gap-6 justify-center">
-            <button onClick={() => setActiveTab('buy')} className="bg-[#c19a5b] text-[#1a365d] px-16 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all">Explorar</button>
-            <button onClick={() => setActiveTab('sell')} className="bg-white/10 backdrop-blur-xl border-2 border-white/20 px-16 py-6 rounded-2xl font-black text-xl">Anunciar</button>
+            <button onClick={() => setActiveTab('buy')} className="bg-[#c19a5b] text-[#1a365d] px-16 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-2xl">Explorar</button>
+            <button onClick={() => setActiveTab('sell')} className="bg-white/10 backdrop-blur-xl border-2 border-white/20 px-16 py-6 rounded-2xl font-black text-xl hover:bg-white/20 transition-all">Anunciar</button>
           </div>
         </div>
       </section>
@@ -268,11 +266,12 @@ const App: React.FC = () => {
         <h1 className="text-6xl font-black text-[#1a365d] mb-12 tracking-tighter">Listar Novo Ativo</h1>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-10">
+            {/* 1. CLASSIFICAÇÃO */}
             <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-8">
               <h2 className="text-xl font-black text-[#1a365d] uppercase tracking-widest text-[10px]">1. Classificação do Ativo</h2>
               <div className="grid grid-cols-2 gap-4">
                 <button 
-                  onClick={() => setListingForm({...listingForm, type: PropertyType.LAND, listingMode: ListingMode.SELL})} 
+                  onClick={() => setListingForm({...listingForm, type: PropertyType.LAND})} 
                   className={`py-6 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${listingForm.type === PropertyType.LAND ? 'bg-[#1a365d] text-white shadow-xl scale-105' : 'bg-slate-50 text-slate-400'}`}
                 >Terreno</button>
                 <button 
@@ -281,34 +280,89 @@ const App: React.FC = () => {
                 >Imóvel Construído</button>
               </div>
             </div>
-            {/* Outras seções de sell omitidas para brevidade, mantendo funcionalidade intacta */}
+
+            {/* 2. LOCALIZAÇÃO */}
             <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-8">
               <h2 className="text-xl font-black text-[#1a365d] uppercase tracking-widest text-[10px]">2. Logística e Localização</h2>
               <div className="grid grid-cols-4 gap-6">
                 <div className="col-span-1">
                   <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">CEP</label>
-                  <input type="text" maxLength={8} onBlur={handleCEPBlur} className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.cep} onChange={e => setListingForm({...listingForm, cep: e.target.value})} />
+                  <input type="text" maxLength={8} onBlur={handleCEPBlur} className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-[#c19a5b]" value={listingForm.cep} onChange={e => setListingForm({...listingForm, cep: e.target.value})} />
                 </div>
                 <div className="col-span-3">
                   <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Logradouro</label>
                   <input type="text" className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.street} onChange={e => setListingForm({...listingForm, street: e.target.value})} />
                 </div>
+                <div className="col-span-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Número</label>
+                  <input type="text" className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.number} onChange={e => setListingForm({...listingForm, number: e.target.value})} />
+                </div>
+                <div className="col-span-3">
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Bairro</label>
+                  <input type="text" className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.neighborhood} onChange={e => setListingForm({...listingForm, neighborhood: e.target.value})} />
+                </div>
+                <div className="col-span-4">
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Referência / Complemento</label>
+                  <input type="text" className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.complement} onChange={e => setListingForm({...listingForm, complement: e.target.value})} />
+                </div>
               </div>
             </div>
-            {/* Fim das seções sell simplificadas para o XML */}
+
+            {/* 3. DADOS PÚBLICOS */}
+            <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-8">
+              <h2 className="text-xl font-black text-[#1a365d] uppercase tracking-widest text-[10px]">3. Exibição Pública</h2>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Título do Anúncio</label>
+                  <input type="text" placeholder="Ex: Terreno com Vista para o Vale" className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.title} onChange={e => setListingForm({...listingForm, title: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Área Total (m²)</label>
+                    <input type="number" className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.area} onChange={e => setListingForm({...listingForm, area: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Telefone de Contato</label>
+                    <input type="text" placeholder="(00) 00000-0000" className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.phone} onChange={e => setListingForm({...listingForm, phone: e.target.value})} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Descrição Comercial</label>
+                  <textarea rows={4} className="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none" value={listingForm.description} onChange={e => setListingForm({...listingForm, description: e.target.value})} />
+                </div>
+              </div>
+              
+              <div className="border-4 border-dashed border-slate-100 p-12 rounded-[2.5rem] text-center bg-slate-50/50 relative hover:bg-slate-100 transition-all cursor-pointer">
+                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => setSelectedFiles(Array.from(e.target.files || []))} />
+                <p className="text-[#c19a5b] font-black uppercase text-[10px] tracking-widest">{selectedFiles.length > 0 ? `${selectedFiles.length} fotos anexadas` : "Anexar Fotos do Ativo"}</p>
+              </div>
+            </div>
+
+            {/* 4. DOSSIÊ IA */}
+            <div className="bg-[#f8fafc] p-12 rounded-[3.5rem] border border-[#1a365d]/5 shadow-inner space-y-8">
+              <h2 className="text-xl font-black text-[#1a365d] uppercase tracking-widest text-[10px]">4. Dossiê Sigiloso IA</h2>
+              <p className="text-xs text-slate-400">Informações confidenciais que ajudam a IA a calcular o valor real (ex: dívidas, reformas necessárias, vizinhança).</p>
+              <textarea placeholder="Ex: Precisa de reforma no muro lateral, documentação 100%, vizinhança silenciosa..." rows={4} className="w-full bg-white p-5 rounded-2xl font-bold outline-none border border-slate-100" value={listingForm.aiDetails} onChange={e => setListingForm({...listingForm, aiDetails: e.target.value})} />
+            </div>
           </div>
+          
           <div className="space-y-6">
             <div className="bg-[#1a365d] p-12 rounded-[4rem] text-white shadow-2xl sticky top-32 space-y-8 border-b-[12px] border-[#c19a5b]">
-              <button onClick={handleValuation} disabled={isValuating} className="w-full bg-[#c19a5b] text-[#1a365d] py-6 rounded-3xl font-black uppercase tracking-widest text-[10px]">
+              <h3 className="text-[#c19a5b] font-black uppercase text-[10px] tracking-[0.4em] mb-4">Painel Analítico</h3>
+              <button onClick={handleValuation} disabled={isValuating} className="w-full bg-[#c19a5b] text-[#1a365d] py-6 rounded-3xl font-black uppercase tracking-widest text-[10px] hover:brightness-110 transition-all active:scale-95">
                 {isValuating ? 'Analisando Ativo...' : 'Solicitar Preço IA'}
               </button>
               {valuation && (
-                <div className="space-y-4 animate-in fade-in">
-                  <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-                    <p className="text-[9px] uppercase font-black text-white/40 mb-1">Preço Sugerido</p>
+                <div className="space-y-6 animate-in fade-in duration-500">
+                  <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <p className="text-[9px] uppercase font-black text-white/40 mb-1 tracking-widest">Avaliação Sugerida</p>
                     <p className="text-4xl font-black text-[#c19a5b]">R$ {valuation.maxProfit.max.toLocaleString('pt-BR')}</p>
                   </div>
-                  <button onClick={handlePublish} disabled={isPublishing} className="w-full bg-white text-[#1a365d] py-6 rounded-3xl font-black uppercase tracking-widest text-[10px]">
+                  <div className="space-y-2">
+                    <label className="text-[9px] uppercase font-black text-white/40 tracking-widest">Preço de Anúncio</label>
+                    <input type="number" className="w-full bg-white/10 p-5 rounded-2xl text-white font-black outline-none border border-white/20 focus:border-[#c19a5b]" value={listingForm.price} onChange={e => setListingForm({...listingForm, price: Number(e.target.value)})} />
+                  </div>
+                  <button onClick={handlePublish} disabled={isPublishing} className="w-full bg-white text-[#1a365d] py-6 rounded-3xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-xl">
                     {isPublishing ? 'Publicando...' : 'Confirmar e Listar'}
                   </button>
                 </div>
@@ -323,7 +377,11 @@ const App: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-16 animate-in fade-in duration-200">
         <h1 className="text-6xl font-black text-[#1a365d] mb-16 tracking-tighter text-center">Catálogo Premium</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-16">
-          {filteredProperties.map(p => <PropertyCard key={p.id} property={p} onClick={() => setSelectedProperty(p)} />)}
+          {filteredProperties.length > 0 ? (
+            filteredProperties.map(p => <PropertyCard key={p.id} property={p} onClick={() => setSelectedProperty(p)} />)
+          ) : (
+            <div className="col-span-full py-24 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">Nenhum ativo encontrado</div>
+          )}
         </div>
       </div>
     );
@@ -332,14 +390,21 @@ const App: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-12 animate-in fade-in duration-300">
         <h2 className="text-5xl font-black text-[#1a365d] mb-12 tracking-tighter">Meus Ativos</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {myProperties.map(p => <PropertyCard key={p.id} property={p} onClick={() => setSelectedProperty(p)} />)}
+          {myProperties.length > 0 ? (
+            myProperties.map(p => <PropertyCard key={p.id} property={p} onClick={() => setSelectedProperty(p)} />)
+          ) : (
+            <div className="col-span-full py-24 text-center bg-slate-50 rounded-[3rem] border-4 border-dashed border-slate-100">
+              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mb-8">Você ainda não listou nenhum ativo</p>
+              <button onClick={() => setActiveTab('sell')} className="bg-[#1a365d] text-white px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest">Anunciar Agora</button>
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white selection:bg-[#c19a5b] selection:text-[#1a365d]">
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-100 h-28 flex items-center shadow-sm">
         <div className="max-w-7xl mx-auto w-full px-4 flex justify-between items-center">
           <div onClick={() => {setActiveTab('home'); setSelectedProperty(null);}} className="flex items-center gap-4 cursor-pointer group">
@@ -348,17 +413,20 @@ const App: React.FC = () => {
           </div>
           
           <div className="hidden lg:flex gap-14 items-center">
-            <button onClick={() => {setActiveTab('buy'); setSelectedProperty(null);}} className={`font-black text-[11px] uppercase tracking-widest ${activeTab === 'buy' ? 'text-[#c19a5b]' : 'text-slate-400 hover:text-[#1a365d]'}`}>Ativos</button>
-            <button onClick={() => setActiveTab('sell')} className={`bg-[#1a365d] text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0f172a] shadow-xl transition-all ${activeTab === 'sell' ? 'bg-[#c19a5b]' : ''}`}>Anunciar</button>
+            <button onClick={() => {setActiveTab('buy'); setSelectedProperty(null);}} className={`font-black text-[11px] uppercase tracking-widest transition-all ${activeTab === 'buy' ? 'text-[#c19a5b] border-b-2 border-[#c19a5b]' : 'text-slate-400 hover:text-[#1a365d]'}`}>Ativos</button>
+            {currentUser && (
+              <button onClick={() => setActiveTab('dashboard')} className={`font-black text-[11px] uppercase tracking-widest transition-all ${activeTab === 'dashboard' ? 'text-[#c19a5b] border-b-2 border-[#c19a5b]' : 'text-slate-400 hover:text-[#1a365d]'}`}>Meu Painel</button>
+            )}
+            <button onClick={() => setActiveTab('sell')} className={`bg-[#1a365d] text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#c19a5b] hover:text-[#1a365d] shadow-xl transition-all ${activeTab === 'sell' ? 'bg-[#c19a5b] text-[#1a365d]' : ''}`}>Anunciar</button>
             {currentUser ? (
-              <button onClick={() => signOut(auth)} className="text-[10px] font-black uppercase text-red-500 tracking-widest">Sair</button>
+              <button onClick={() => signOut(auth)} className="text-[10px] font-black uppercase text-red-500 tracking-widest hover:brightness-75 transition-all">Sair</button>
             ) : (
-              <button onClick={() => setActiveTab('login')} className="text-[10px] font-black uppercase text-[#1a365d] tracking-widest">Acessar</button>
+              <button onClick={() => setActiveTab('login')} className="text-[10px] font-black uppercase text-[#1a365d] tracking-widest hover:text-[#c19a5b] transition-all">Acessar</button>
             )}
           </div>
         </div>
       </nav>
-      <main>{renderContent()}</main>
+      <main className="pb-24">{renderContent()}</main>
       <GeminiChatbot />
     </div>
   );

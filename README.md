@@ -1,20 +1,29 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Lumatrix - Guia de Deploy
 
-# Run and deploy your AI Studio app
+Este projeto utiliza o **GitHub Actions** para deploy automático. Você **não precisa** usar `npm run deploy`.
 
-This contains everything you need to run your app locally.
+## Como publicar seu site:
 
-View your app in AI Studio: https://ai.studio/apps/drive/1llxwvXSUQSycrybq4EP_OmRzefLjXRNs
+1. **Configure sua Chave do Gemini no GitHub (Uma única vez):**
+   - No seu repositório no GitHub: **Settings** -> **Secrets and variables** -> **Actions**.
+   - Clique em **New repository secret**.
+   - Nome: `VITE_GEMINI_KEY`.
+   - Valor: Sua chave da API Gemini.
 
-## Run Locally
+2. **Ative o Pages (Uma única vez):**
+   - No GitHub: **Settings** -> **Pages**.
+   - Em **Build and deployment** > **Source**, altere para **GitHub Actions**.
 
-**Prerequisites:**  Node.js
+3. **Envie seu código (Sempre que quiser atualizar):**
+   Execute estes comandos no seu terminal:
+   ```bash
+   git add .
+   git commit -m "Minha atualização"
+   git push origin main
+   ```
 
+**O que acontece agora?**
+Assim que você der o `push`, o GitHub iniciará um "workflow" automático. Ele vai construir (build) seu projeto e publicá-lo no link do GitHub Pages. Você pode acompanhar o progresso na aba **Actions** do seu repositório.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Por que `npm run deploy` falhou?
+O comando `npm run deploy` tenta usar o pacote `gh-pages` para enviar arquivos manualmente de sua máquina. Como configuramos um fluxo profissional via **GitHub Actions**, esse comando manual entra em conflito ou não possui as chaves de ambiente que o GitHub Actions gerencia de forma segura. Use apenas o `git push`.

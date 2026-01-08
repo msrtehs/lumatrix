@@ -3,33 +3,22 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Property } from "../types";
 
 export const geminiService = {
-  // Helper para obter a instância da IA decodificando a chave se necessário
+  // Get the AI instance using the API key directly from process.env.API_KEY as per guidelines
   getAI() {
-    let key = process.env.API_KEY || "";
-    
-    // Se a chave estiver em Base64 (não começa com o prefixo padrão do Google 'AIza'), decodifica
-    if (key && !key.startsWith("AIza")) {
-      try {
-        // atob converte Base64 de volta para a string original
-        key = atob(key.trim());
-        console.debug("Lumatrix: API_KEY decodificada com sucesso.");
-      } catch (e) {
-        console.error("Lumatrix: Erro ao tentar decodificar a API_KEY. Verifique se o formato Base64 está correto.", e);
-      }
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error("API key is missing.");
     }
-
-    if (!key) {
-      throw new Error("API key is missing. Certifique-se de que VITE_GEMINI_KEY está no seu arquivo .env");
-    }
-
-    return new GoogleGenAI({ apiKey: key });
+    // Correct initialization: new GoogleGenAI({ apiKey: process.env.API_KEY })
+    return new GoogleGenAI({ apiKey });
   },
 
+  // Handles multi-turn chat responses
   async getChatResponse(prompt: string, history: { role: 'user' | 'model', text: string }[]) {
     try {
       const ai = this.getAI();
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3-pro-preview', // Upgraded to Pro for complex advisory tasks
         contents: [
           ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
           { role: 'user', parts: [{ text: prompt }] }
@@ -39,16 +28,15 @@ export const geminiService = {
           temperature: 0.6,
         }
       });
+      // Use .text property directly
       return response.text || "Lumatrix: Erro de resposta.";
     } catch (error: any) {
       console.error("Gemini Error:", error);
-      if (error.message?.includes("API key is missing")) {
-        return "Lumatrix: Erro de autenticação. A chave VITE_GEMINI_KEY não foi encontrada ou é inválida.";
-      }
       return "Lumatrix: Ocorreu um erro na comunicação com meu núcleo de processamento.";
     }
   },
 
+  // Provides quick analysis for a property
   async getBuyerInsight(property: Property) {
     try {
       const ai = this.getAI();
@@ -66,10 +54,11 @@ export const geminiService = {
       return response.text || "Análise indisponível.";
     } catch (error) {
       console.error("Insight Error:", error);
-      return "Análise de investimento indisponível (Erro de Autenticação).";
+      return "Análise de investimento indisponível.";
     }
   },
 
+  // Geocoding helper with JSON response schema
   async getCoordinates(address: string): Promise<{ lat: number, lng: number }> {
     try {
       const ai = this.getAI();
@@ -80,7 +69,17 @@ export const geminiService = {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
-        config: { responseMimeType: "application/json" }
+        config: { 
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              lat: { type: Type.NUMBER },
+              lng: { type: Type.NUMBER }
+            },
+            required: ["lat", "lng"]
+          }
+        }
       });
       
       return JSON.parse(response.text || '{"lat": -23.5505, "lng": -46.6333}');
@@ -89,6 +88,7 @@ export const geminiService = {
     }
   },
 
+  // Complex valuation engine using Pro model and response schema
   async estimateValue(data: any, ibgeMetrics?: any) {
     try {
       const ai = this.getAI();
@@ -104,8 +104,24 @@ export const geminiService = {
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              fastSell: { type: Type.OBJECT, properties: { min: {type: Type.NUMBER}, max: {type: Type.NUMBER}, justification: {type: Type.STRING} }, required: ["min", "max", "justification"] },
-              maxProfit: { type: Type.OBJECT, properties: { min: {type: Type.NUMBER}, max: {type: Type.NUMBER}, justification: {type: Type.STRING} }, required: ["min", "max", "justification"] },
+              fastSell: { 
+                type: Type.OBJECT, 
+                properties: { 
+                  min: {type: Type.NUMBER}, 
+                  max: {type: Type.NUMBER}, 
+                  justification: {type: Type.STRING} 
+                }, 
+                required: ["min", "max", "justification"] 
+              },
+              maxProfit: { 
+                type: Type.OBJECT, 
+                properties: { 
+                  min: {type: Type.NUMBER}, 
+                  max: {type: Type.NUMBER}, 
+                  justification: {type: Type.STRING} 
+                }, 
+                required: ["min", "max", "justification"] 
+              },
               marketContext: { type: Type.STRING }
             },
             required: ["fastSell", "maxProfit", "marketContext"]
